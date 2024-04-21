@@ -1,6 +1,7 @@
 import { createServer } from 'http';
 import "dotenv/config";
-const server = createServer();
+import app from "./src/config/express.config.js";
+const server = createServer(app);
 
 const port = process.env.PORT || 9005;
 
