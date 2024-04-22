@@ -1,11 +1,12 @@
 import { Router } from "express";
+import authCtrl from "./auth.controller.js";
 const router = Router();
 
-router.post('/register', (req, res, next) => { })
-router.post('/activate/:token', (req, res, next) => { })
-router.post('/login', (req, res, next) => { })
-router.get('/me', (req, res, next) => { })
-router.post('/forget-password', (req, res, next) => { })
-router.post('/set-password/:token', (req, res, next) => { })
+router.post('/register', authCtrl.registerUser)
+router.post('/activate/:token', authCtrl.activateUser)
+router.post('/login', authCtrl.login)
+router.get('/me', authCtrl.getLoggedInUser)
+router.post('/forget-password', authCtrl.forgetPassword)
+router.post('/set-password/:token', authCtrl.setPassword)
 
 export default router;
