@@ -2,10 +2,9 @@ class AuthController {
   registerUser = (req, res, next) => {
     try {
       let data = req.body;
-      // console.log(data)
 
     } catch (exception) {
-      console.log(exception)
+      next(exception)
     }
   }
   activateUser = (req, res, next) => {
