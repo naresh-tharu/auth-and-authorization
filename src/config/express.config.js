@@ -1,5 +1,6 @@
 import express from 'express';
 import routes from "../routes/index.js";
+import { ZodError } from 'zod';
 const app = express();
 
 //body-parser in express
@@ -22,7 +23,15 @@ app.use((req, res, next) => {
 app.use((error, req, res, next) => {
   let code = error.code || 500;
   let msg = error.message || "Internal Server Error";
-  res.json({
+  if (error instanceof ZodError) {
+    let errBag = {}
+    error.errors.map((errObj) => {
+      errBag[errObj.path[0]] = errObj.message;
+    })
+    code = 400
+    msg = errBag
+  }
+  res.status(code).json({
     result: null,
     message: msg,
     meta: null
