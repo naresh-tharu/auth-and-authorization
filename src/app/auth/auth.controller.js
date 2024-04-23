@@ -1,12 +1,16 @@
+import AuthRequest from "./auth.request.js"
+
 class AuthController {
   registerUser = (req, res, next) => {
     try {
-      let data = req.body;
-      console.log("success", data)
+      let mappedData = new AuthRequest(req).transformRegisterData();
+      console.log(mappedData)
+
 
       //payload
       //validate using zod
       //file uploader
+      //file binding
       //send mail token
       //store in db
 
