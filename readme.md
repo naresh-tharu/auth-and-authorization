@@ -6,15 +6,18 @@
     /app
       /auth
           auth.router.js
+          ...
     /config
         express.config.js
+        ...
     /routes
         index.js
     /middleware
     /services
 .env
+.envexample
 .gitignore
-.gitexample
+
 index.js
 
 
