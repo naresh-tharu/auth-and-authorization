@@ -1,6 +1,7 @@
 import express from 'express';
 import routes from "../routes/index.js";
 import { ZodError } from 'zod';
+import { MulterError } from 'multer';
 const app = express();
 
 //body-parser in express
@@ -30,6 +31,10 @@ app.use((error, req, res, next) => {
     })
     code = 400
     msg = errBag
+  }
+  if (error instanceof MulterError) {
+    code = 400
+    msg = error.message
   }
   res.status(code).json({
     result: null,
