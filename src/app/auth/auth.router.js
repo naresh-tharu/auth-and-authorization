@@ -2,9 +2,15 @@ import { Router } from "express";
 import authCtrl from "./auth.controller.js";
 import validateRequest from "../../middlewares/validator.middleware.js";
 import { registerSchema } from "./auth.validator.js";
+import { uploader } from "../../middlewares/uploader.middleware.js";
 const router = Router();
 
-router.post('/register', validateRequest(registerSchema), authCtrl.registerUser)
+const dirPath = (req, res, next) => {
+  req.uploadPath = "./public/uploads/users"
+  next()
+}
+
+router.post('/register', dirPath, uploader.single('image'), validateRequest(registerSchema), authCtrl.registerUser)
 router.post('/activate/:token', authCtrl.activateUser)
 router.post('/login', authCtrl.login)
 router.get('/me', authCtrl.getLoggedInUser)
