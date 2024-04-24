@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { helpers } from '../config/helpers.js';
+import { randomStringGenerate } from '../config/helpers.js';
 import multer from 'multer';
 
 const myStorage = multer.diskStorage({
@@ -13,7 +13,7 @@ const myStorage = multer.diskStorage({
     cb(null, path)
   },
   filename: (req, file, cb) => {
-    let fname = Date.now() + "-" + helpers.randomStringGenerate() + "-" + file.originalname;
+    let fname = Date.now() + "-" + randomStringGenerate() + "-" + file.originalname;
     cb(null, fname)
   }
 
