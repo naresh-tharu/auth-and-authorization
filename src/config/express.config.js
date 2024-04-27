@@ -2,6 +2,7 @@ import express from 'express';
 import routes from "../routes/index.js";
 import { ZodError } from 'zod';
 import { MulterError } from 'multer';
+import jwt from 'jsonwebtoken'
 const app = express();
 
 //body-parser in express
@@ -34,6 +35,10 @@ app.use((error, req, res, next) => {
   }
   if (error instanceof MulterError) {
     code = 400
+    msg = error.message
+  }
+  if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError || error instanceof jwt.NotBeforeError) {
+    code = 401
     msg = error.message
   }
   res.status(code).json({
