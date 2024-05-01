@@ -1,19 +1,23 @@
 import 'dotenv/config';
 import AuthRequest from "./auth.request.js"
 import mailSvc from '../../services/mail.service.js';
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { MongoClient } from 'mongodb';
 
 class AuthController {
   registerUser = async (req, res, next) => {
     try {
       let mappedData = new AuthRequest(req).transformRegisterData();
-
+      // //DB connection
+      const connect = await MongoClient.connect(process.env.MONGODB_URL)
+      const db = connect.db(process.env.DB_NAME)
+      let response = await db.collection('users').insertOne(mappedData)
       mailSvc.sendEmail(
         mappedData.email,
         "Activate your Account!!!",
         `<strong>Dear ${mappedData.name}</strong> 
-        <p>Your account has ben registered successfully.</p>
+        <p>Your account has been registered successfully.</p>
         <p>Please click the link below or copy the url to activate your account: </p>
         <a href="${process.env.FRONTEND_URL}/activate/${mappedData.token}">${process.env.FRONTEND_URL}/activate/${mappedData.token}</a>
       <p>Thank you again for the use.</p>
@@ -23,84 +27,97 @@ class AuthController {
         `
       )
 
-      // TODO: Store in DB
-      //payload
-      //validate using zod
-      //file uploader
-      //file binding
-      //send mail token
-      //store in db
       res.json({
-        result: mappedData,
+        result: response,
         message: "User registered successfully.",
         meta: null
       })
 
     } catch (exception) {
+      console.log({ exception })
       next(exception)
     }
   }
-  activateUser = (req, res, next) => {
-    let token = req.params.token;
+  activateUser = async (req, res, next) => {
+    try {
+      let token = req.params.token;
+      //DB connection
+      const connect = await MongoClient.connect(process.env.MONGODB_URL)
+      const db = connect.db(process.env.DB_NAME)
+      let userDetail = await db.collection('users').findOne({
+        token: token
+      })
+      if (userDetail) {
+        //user exits
+        // TODO: Update User with password field
+        let password = bcrypt.hashSync(req.body.password, 10)
+        let updateResponse = await db.collection('users').updateOne({
+          _id: userDetail._id
+        }, {
+          $set: {
+            password: password,
+            token: null,
+            status: "active"
+          }
+        })
+        res.json({
+          result: updateResponse,
+          message: "User Activated Successfully",
+          meta: null
+        })
 
-    // TODO: Update User with password field
-    let password = bcrypt.hashSync(req.body.password, 10)
-    res.json({
-      result: password,
-      message: "User Activated Successfully",
-      meta: null
-    })
+      } else {
+        next({ code: 400, message: "Token expired or does not exists." })
+      }
+    } catch (exception) {
+      next(exception)
+    }
 
   }
-  login = (req, res, next) => {
+  login = async (req, res, next) => {
     try {
       let credentials = req.body
       //email:="", password:""
       //TODO:DB User fetch based on user email
+      //db connection
+      const connect = await MongoClient.connect(process.env.MONGODB_URL)
+      const db = connect.db(process.env.DB_NAME)
 
-      let userDetail = {
-        id: 123,
-        name: "Naresh Tharu",
-        email: "nareshtharu.info@gmail.com",
-        role: "admin",
-        password: "$2a$10$ArNTGo/n9QICSxQerRZZ3./b8fF1HEwXFCSAvR8aciupjPLpY75Yy"
-      }
+      let userDetail = await db.collection('users').findOne({
+        email: credentials.email,
+        // token: { $eq: null }
+      })
+      console.log(userDetail)
       //Admin123#
-      if (bcrypt.compareSync(credentials.password, userDetail.password)) {
-        //password match
-        let token = jwt.sign({
-          id: userDetail.id
-        }, process.env.JWT_SECRET, {
-          expiresIn: "1 days"
-        })
 
-        let refreshToken = jwt.sign({
-          id: userDetail.id
-        }, process.env.JWT_SECRET, {
-          expiresIn: "7 days"
-        })
-
-
-        res.json({
-          result: {
-            token: token,
-            refreshToken: refreshToken,
-            type: "Bearer",
-            detail: {
-              id: userDetail.id,
-              name: userDetail.name,
-              email: userDetail.email,
-              role: userDetail.role
-            }
-          },
-          message: "User Logged Successfully",
-          meta: null
-        })
+      if (userDetail) {
+        if (userDetail.token) {
+          next({ code: 400, message: "User not activated" })
+        }
+        if (bcrypt.compareSync(credentials.password, userDetail.password)) {
+          //password match
+          let token = jwt.sign({ id: userDetail._id }, process.env.JWT_SECRET, { expiresIn: "1 days" })
+          let refreshToken = jwt.sign({ id: userDetail._id }, process.env.JWT_SECRET, { expiresIn: "7 days" })
+          res.json({
+            result: {
+              token: token,
+              refreshToken: refreshToken,
+              type: "Bearer",
+              detail: {
+                id: userDetail._id,
+                name: userDetail.name,
+                email: userDetail.email,
+                role: userDetail.role
+              }
+            },
+            message: "User Logged Successfully",
+            meta: null
+          })
+        } else {
+          next({ code: 400, message: "Credentials does not match" })
+        }
       } else {
-        next({
-          code: 400,
-          message: "Credentials does not match"
-        })
+        next({ code: 400, message: "User doesnot exits or not activated" })
       }
     } catch (exception) {
       next(exception)
