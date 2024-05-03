@@ -21,20 +21,17 @@ const myStorage = multer.diskStorage({
 
 const imageFilter = (req, file, cb) => {
   try {
-    let allowed = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']
+    let allowed = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp']
     // let filename = file.originalname;
     // let ext = filename.split('.').pop();
     let extension = file.originalname.split('.').pop()
     if (allowed.includes(extension.toLowerCase())) {
       cb(null, true)
     } else {
-      cb({
-        code: 400,
-        message: "File format not supported"
-      }, null)
+      cb({ code: 400, message: "File format not supported" }, null)
     }
   } catch (exception) {
-    cb(err, null)
+    cb(exception, null)
   }
 }
 
