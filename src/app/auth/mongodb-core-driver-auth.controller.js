@@ -5,17 +5,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { MongoClient } from 'mongodb';
 
-import authSvc from './auth.service.js';
-
 class AuthController {
   registerUser = async (req, res, next) => {
     try {
       let mappedData = new AuthRequest(req).transformRegisterData();
       // //DB connection
-      // const connect = await MongoClient.connect(process.env.MONGODB_URL)
-      // const db = connect.db(process.env.DB_NAME)
-
-      let response = await authSvc.storeUser(mappedData)
+      const connect = await MongoClient.connect(process.env.MONGODB_URL)
+      const db = connect.db(process.env.DB_NAME)
+      let response = await db.collection('users').insertOne(mappedData)
       mailSvc.sendEmail(
         mappedData.email,
         "Activate your Account!!!",

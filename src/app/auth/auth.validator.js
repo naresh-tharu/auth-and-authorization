@@ -18,8 +18,6 @@ let userActivationSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
-
 });
-
 
 export { registerSchema, userActivationSchema, loginSchema }
