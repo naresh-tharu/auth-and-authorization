@@ -11,10 +11,6 @@ class AuthController {
   registerUser = async (req, res, next) => {
     try {
       let mappedData = new AuthRequest(req).transformRegisterData();
-      // //DB connection
-      // const connect = await MongoClient.connect(process.env.MONGODB_URL)
-      // const db = connect.db(process.env.DB_NAME)
-
       let response = await authSvc.storeUser(mappedData)
       mailSvc.sendEmail(
         mappedData.email,

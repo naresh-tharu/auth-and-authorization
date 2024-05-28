@@ -9,6 +9,4 @@ const randomStringGenerate = (len = 100) => {
   }
   return randomString;
 }
-
-
 export { randomStringGenerate }
