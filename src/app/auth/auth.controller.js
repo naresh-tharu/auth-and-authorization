@@ -102,7 +102,11 @@ class AuthController {
     }
   };
   getLoggedInUser = (req, res, next) => {
-    
+    res.json({
+      result:req.authUser,
+      message:"Your profile",
+      meta:null
+    })
   };
   forgetPassword = async (req, res, next) => {
     try {
