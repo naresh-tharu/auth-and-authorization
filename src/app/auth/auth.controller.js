@@ -3,29 +3,27 @@ import AuthRequest from "./auth.request.js";
 import mailSvc from "../../services/mail.service.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { MongoClient } from "mongodb";
-
 import authSvc from "./auth.service.js";
+import { randomStringGenerate } from "../../config/helpers.js";
 
 class AuthController {
   registerUser = async (req, res, next) => {
     try {
       let mappedData = new AuthRequest(req).transformRegisterData();
       let response = await authSvc.storeUser(mappedData);
-      mailSvc.sendEmail(
+      await mailSvc.sendEmail(
         mappedData.email,
         "Activate your Account!!!",
         `<strong>Dear ${mappedData.name}</strong> 
         <p>Your account has been registered successfully.</p>
         <p>Please click the link below or copy the url to activate your account: </p>
         <a href="${process.env.FRONTEND_URL}/activate/${mappedData.token}">${process.env.FRONTEND_URL}/activate/${mappedData.token}</a>
-      <p>Thank you again for the use.</p>
-      <p>Regards,</p>
-      <p>No reply, system</p>
-      <p><small><em>Please do not reply to this email.</em></small></p>
+        <p>Thank you again for the use.</p>
+        <p>Regards,</p>
+        <p>No reply, system</p>
+        <p><small><em>Please do not reply to this email.</em></small></p>
         `
       );
-
       res.json({
         result: response,
         message: "User registered successfully.",
@@ -103,9 +101,82 @@ class AuthController {
       next(exception);
     }
   };
-  getLoggedInUser = (req, res, next) => {};
-  forgetPassword = (req, res, next) => {};
-  setPassword = (req, res, next) => {};
+  getLoggedInUser = (req, res, next) => {
+    
+  };
+  forgetPassword = async (req, res, next) => {
+    try {
+      let email = req.body.email;
+      let userDetail = await authSvc.getUserByFilter({
+        email: email,
+      });
+      if (userDetail.length === 1) {
+        let user = userDetail[0];
+        user.forgetToken = randomStringGenerate(100);
+        let date = new Date();
+        date.setUTCHours(date.getUTCHours() + 2);
+        user.validateTill = date;
+        await user.save();
+        await mailSvc.sendEmail(
+          user.email,
+          "Reset Password",
+          `
+          <h4>Dear ${user.name}</h4>
+          <p>If you have tried to reset your password please click or copy paste the following link in the browser.</p>
+          <a href ="${process.env.FRONTEND_URL}/reset-password/${user.forgetToken}">${process.env.FRONTEND_URL}/reset-password/${user.forgetToken}</a>
+          <br/>
+          <p>This token url is valid only for 2 hours.</p>
+          <p>If this was mistake, please ignore the message.</p>
+          <p>Regards,</p>
+          <p>No reply, system</p>
+          <p><em>Do not reply to this email</em></p>
+      
+          `
+        );
+        res.json({
+          result: {
+            user: user,
+          },
+          message: "Password reset token sent successfully",
+          meta: null,
+        });
+      } else {
+        throw {
+          code: 400,
+          message: "User does not exits",
+        };
+      }
+    } catch (exception) {
+      next(exception);
+    }
+  };
+  resetPassword = async (req, res, next) => {
+    try {
+      let token = req.params.token;
+      let userDetail = await authSvc.getUserByFilter({
+        forgetToken: token,
+        validateTill: { $gte: new Date() },
+      });
+      console.log(userDetail);
+      if (userDetail.length === 1) {
+        let password = bcrypt.hashSync(req.body.password, 10);
+        let updateResponse = await authSvc.updateUser(userDetail[0]._id, {
+          password: password,
+          forgetToken: null,
+          validateTill: null,
+        });
+        res.json({
+          result: updateResponse,
+          message: "Your password changed successfully",
+          meta: null,
+        });
+      } else {
+        next({ code: 400, message: "Token expired or does not exists." });
+      }
+    } catch (exception) {
+      next(exception);
+    }
+  };
 }
 const authCtrl = new AuthController();
 export default authCtrl;
