@@ -4,6 +4,7 @@ import validateRequest from "../../middlewares/validator.middleware.js";
 import {loginSchema,registerSchema,userActivationSchema,forgetPasswordSchema,} from "./auth.validator.js";
 import { uploader } from "../../middlewares/uploader.middleware.js";
 import checkLogin from "../../middlewares/auth-check.middleware.js";
+import { checkPermission } from "../../middlewares/rbac.middleware.js";
 const router = Router();
 
 const dirPath = (req, res, next) => {
