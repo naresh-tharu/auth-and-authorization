@@ -134,7 +134,6 @@ class AuthController {
           <p>Regards,</p>
           <p>No reply, system</p>
           <p><em>Do not reply to this email</em></p>
-      
           `
         );
         res.json({
